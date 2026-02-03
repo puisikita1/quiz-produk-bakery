@@ -1,29 +1,873 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
-    <meta property="og:title" content="Kuis Produk Bakery">
-    <meta property="og:description" content="Silakan kerjakan kuis interaktif berikut ini.">
-    <meta property="og:image" content="https://wayground.com/assets/images/logo.png"> <meta property="og:url" content="https://puisikita1.github.io/quiz-produk-bakery/">
-    <meta name="twitter:card" content="summary_large_image">
-    
     <title>Kuis Produk Bakery</title>
     <style>
-        html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #f0f0f0; }
-        .embed-container { width: 100%; height: 100vh; display: flex; flex-direction: column; }
-        iframe { flex: 1; width: 100%; border: none; }
+        /* --- TEMA BAKERY (WARNA & FONT) --- */
+        :root {
+            --bg-color: #3E2723;
+            /* Coklat Tua (Background Utama) */
+            --card-color: #4E342E;
+            /* Coklat Medium (Wadah Soal) */
+            --text-color: #FFF8E1;
+            /* Krem (Teks) */
+            --accent-color: #FF8F00;
+            /* Oranye Emas (Tombol/Highlight) */
+            --hover-color: #FFB300;
+            /* Warna saat mouse hover */
+            --secondary-color: #8D6E63;
+            /* Coklat Muda (Tombol Pasif) */
+            --success-color: #4CAF50;
+            /* Hijau untuk tombol selesai */
+            --font-main: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-main);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+        }
+
+        /* Container Utama (Responsive) */
+        .container {
+            width: 100%;
+            max-width: 500px;
+            /* Lebar ideal untuk tampilan HP */
+            background-color: var(--card-color);
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: 700px;
+            /* Tinggi disesuaikan untuk 5 opsi */
+            position: relative;
+        }
+
+        /* --- LAYAR/HALAMAN --- */
+        .screen {
+            padding: 25px;
+            flex: 1;
+            display: none;
+            /* Disembunyikan secara default */
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        .screen.active {
+            display: flex;
+        }
+
+        /* Tampilkan jika aktif */
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* --- HALAMAN DEPAN --- */
+        h1 {
+            color: var(--accent-color);
+            margin-bottom: 20px;
+            font-size: 2rem;
+        }
+
+        .instructions {
+            text-align: left;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            width: 100%;
+        }
+
+        .instructions li {
+            margin-bottom: 8px;
+            margin-left: 20px;
+        }
+
+        /* --- TOMBOL --- */
+        .btn {
+            background-color: var(--accent-color);
+            color: #fff;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, background 0.2s;
+            width: 100%;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn:hover {
+            background-color: var(--hover-color);
+            transform: scale(1.02);
+        }
+
+        .btn:disabled {
+            background-color: #777;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-small {
+            padding: 10px 20px;
+            font-size: 0.9rem;
+            width: auto;
+        }
+
+        .btn-secondary {
+            background-color: var(--secondary-color);
+        }
+
+        /* --- HALAMAN KUIS --- */
+        .header-quiz {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            width: 100%;
+            height: 8px;
+            background-color: rgba(0, 0, 0, 0.3);
+            border-radius: 4px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background-color: var(--accent-color);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        /* Teks Soal */
+        .question-text {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            line-height: 1.5;
+            text-align: left;
+            width: 100%;
+            min-height: 60px;
+        }
+
+        /* Pilihan Jawaban */
+        .options-container {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .option-btn {
+            background-color: rgba(255, 255, 255, 0.08);
+            border: 2px solid transparent;
+            padding: 12px 15px;
+            border-radius: 10px;
+            text-align: left;
+            color: var(--text-color);
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.95rem;
+            position: relative;
+        }
+
+        .option-btn:hover {
+            background-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .option-btn.selected {
+            background-color: rgba(255, 143, 0, 0.25);
+            border-color: var(--accent-color);
+            font-weight: bold;
+        }
+
+        /* Label Huruf (A, B, C, D, E) */
+        .opt-label {
+            display: inline-block;
+            width: 25px;
+            font-weight: bold;
+            color: var(--accent-color);
+        }
+
+        /* --- NAVIGATOR (Pop-up Daftar Soal) --- */
+        .nav-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--card-color);
+            z-index: 10;
+            display: none;
+            flex-direction: column;
+            padding: 20px;
+            animation: fadeIn 0.3s;
+        }
+
+        .nav-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+            margin-top: 20px;
+            overflow-y: auto;
+            max-height: 400px;
+        }
+
+        .nav-item {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 12px 0;
+            text-align: center;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: bold;
+        }
+
+        .nav-item.answered {
+            background: var(--accent-color);
+            color: #fff;
+        }
+
+        .nav-item.current {
+            border: 2px solid #fff;
+            box-shadow: 0 0 5px #fff;
+        }
+
+        /* --- POPUP KONFIRMASI --- */
+        .popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 100;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .popup-box {
+            background: var(--card-color);
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            max-width: 320px;
+            border: 2px solid var(--accent-color);
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.7);
+        }
+
+        .popup-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 25px;
+        }
+
+        /* --- HASIL --- */
+        .score-circle {
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            border: 6px solid var(--accent-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 3rem;
+            font-weight: bold;
+            margin-bottom: 25px;
+            background: rgba(0, 0, 0, 0.2);
+            box-shadow: 0 0 15px var(--accent-color);
+        }
+
+        .motivasi-box {
+            font-size: 1.1rem;
+            margin-bottom: 30px;
+            font-style: italic;
+            padding: 0 10px;
+        }
+
+        /* Footer Controls */
+        .nav-controls {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            width: 100%;
+            margin-top: auto;
+        }
+
+        .btn-nav {
+            flex: 1;
+        }
     </style>
 </head>
+
 <body>
-    <div class="embed-container">
-        <iframe 
-            src="https://wayground.com/embed/quiz/6981f566cc463f184f3f4cb8" 
-            title="Kuis Wayground" 
-            allow="fullscreen" 
-            allowfullscreen>
-        </iframe>
+
+    <div class="container">
+
+        <div id="welcome-screen" class="screen active">
+            <img src="https://img.icons8.com/color/96/bread.png" alt="Icon Bakery" style="margin-bottom:10px;">
+            <h1>Kuis Bakery</h1>
+            <div class="instructions">
+                <strong>Petunjuk Pengerjaan:</strong>
+                <ul>
+                    <li>Terdapat <strong>40 Soal</strong> Pilihan Ganda.</li>
+                    <li>Setiap soal memiliki <strong>5 Pilihan Jawaban</strong>.</li>
+                    <li>Waktu pengerjaan bebas (tanpa timer).</li>
+                    <li>Urutan soal dan jawaban diacak oleh sistem.</li>
+                    <li>Klik "Selesai" hanya jika semua soal terjawab.</li>
+                </ul>
+            </div>
+            <button class="btn" onclick="showPopup('start')">Mulai Kuis</button>
+        </div>
+
+        <div id="quiz-screen" class="screen">
+            <div class="header-quiz">
+                <span id="question-counter" style="font-weight:bold;">Soal 1/40</span>
+                <button class="btn-small btn-secondary" onclick="toggleNavigator()">Daftar Soal</button>
+            </div>
+
+            <div class="progress-container">
+                <div class="progress-bar" id="progress-bar"></div>
+            </div>
+
+            <div class="question-text" id="question-text">Loading...</div>
+            <div class="options-container" id="options-container"></div>
+
+            <div class="nav-controls">
+                <button class="btn btn-small btn-secondary btn-nav" id="btn-prev"
+                    onclick="changeQuestion(-1)">Kembali</button>
+                <button class="btn btn-small btn-nav" id="btn-next" onclick="changeQuestion(1)">Lanjut</button>
+                <button class="btn btn-small btn-nav" id="btn-finish"
+                    style="display:none; background-color: var(--success-color);"
+                    onclick="showPopup('finish')">Selesai</button>
+            </div>
+        </div>
+
+        <div id="navigator-overlay" class="nav-overlay">
+            <h2 style="color:var(--accent-color);">Navigasi Soal</h2>
+            <p style="font-size:0.8rem; margin-top:5px;">Klik nomor untuk lompat ke soal tersebut</p>
+            <div class="nav-grid" id="nav-grid">
+            </div>
+            <button class="btn" style="margin-top: 20px;" onclick="toggleNavigator()">Tutup / Kembali ke Soal</button>
+        </div>
+
+        <div id="result-screen" class="screen">
+            <h2>Hasil Kompetensi</h2>
+            <div class="score-circle" id="final-score">0</div>
+            <p id="motivasi-text" class="motivasi-box">...</p>
+            <button class="btn" onclick="location.reload()">Kerjakan Ulang</button>
+        </div>
+
+        <div id="popup-confirm" class="popup-overlay">
+            <div class="popup-box">
+                <h3 id="popup-title" style="margin-bottom:10px; color:var(--accent-color);">Konfirmasi</h3>
+                <p id="popup-message">Pesan konfirmasi...</p>
+                <div class="popup-buttons">
+                    <button class="btn-small btn-secondary" onclick="closePopup()">Batal</button>
+                    <button class="btn-small" id="btn-confirm-action">Ya, Lanjut</button>
+                </div>
+            </div>
+        </div>
+
     </div>
+
+    <script>
+        /* --- DATABASE SOAL (40 Soal, 5 Opsi, Suhu 'derajat Celcius') --- */
+        const rawQuestions = [{
+                q: "Merupakan margarin khusus yang digunakan untuk menghasilkan adonan yang dapat dilipat, yaitu …",
+                o: ["Shortening", "Butter", "Mentega", "Korsvet", "Minyak Nabati"],
+                a: "Korsvet"
+            },
+            {
+                q: "Alat yang digunakan khusus untuk menggilas/menggiling adonan yang menghasilkan ketebalan adonan yang sama rata adalah …",
+                o: ["Divider", "Sheeter", "Mixer", "Proofer", "Oven"],
+                a: "Sheeter"
+            },
+            {
+                q: "Tepung terigu yang memiliki kandungan protein gluten sekitar 8-9% adalah jenis tepung …",
+                o: ["Self raising flour", "Hard flour", "Medium flour", "Soft flour", "Whole wheat flour"],
+                a: "Soft flour"
+            },
+            {
+                q: "Puff pastry dan adonan beragi memiliki karakter yang sama-sama mengembang, namun dengan cara yang berbeda, yaitu :",
+                o: ["Puff pastry menggunakan lemak, roti dengan yeast",
+                    "Puff pastry menggunakan yeast, roti dengan lemak",
+                    "Puff pastry dan roti keduanya menggunakan lemak",
+                    "Puff pastry dan roti keduanya menggunakan yeast", "Keduanya tidak menggunakan pengembang"
+                ],
+                a: "Puff pastry menggunakan lemak, roti dengan yeast"
+            },
+            {
+                q: "Metode pemasukkan lemak roll in pada adonan puff pastry sebelum melalui proses penggilingan dengan bentuk menyerupai amplop adalah …",
+                o: ["Inggris", "Prancis", "Italia", "Skotlandia", "Belanda"],
+                a: "Prancis"
+            },
+            {
+                q: "Metode pemasukan lemak roll in pada adonan puff pastry dengan lemak berbentuk potongan dadu yang diaduk namun tidak sampai tercampur adalah …",
+                o: ["Belanda", "Prancis", "Inggris", "Skotlandia", "Jerman"],
+                a: "Skotlandia"
+            },
+            {
+                q: "Penyusutan selama pengembangan merupakan salah satu kegagalan dalam pembuatan puff pastry yang dapat disebabkan oleh …",
+                o: ["Lemak roll in terlalu banyak", "Lemak roll in terlalu sedikit",
+                    "Adonan kurang di istirahatkan", "Suhu terlalu rendah", "Tepung terlalu kuat"
+                ],
+                a: "Adonan kurang di istirahatkan"
+            },
+            {
+                q: "Karakteristik umum puff pastry mengacu kepada, kecuali …",
+                o: ["Mengembang", "Kulit renyah", "Crumb lembut", "Aroma yang baik", "Berlapis-lapis"],
+                a: "Crumb lembut"
+            },
+            {
+                q: "Salah satu hidangan puff pastry yang berbentuk seperti kerucut dan diisi dengan fla yang manis dinamakan …",
+                o: ["Turnover", "Vol au vent", "Cream horn", "Pastel de nata", "Croissant"],
+                a: "Cream horn"
+            },
+            {
+                q: "Hidangan puff pastry ini memiliki cita rasa asin gurih dengan tambahan daging ayam atau seafood, yaitu …",
+                o: ["Cream horn", "Mille feuille", "Pastel de nata", "Vol au vent", "Danish"],
+                a: "Vol au vent"
+            },
+            {
+                q: "Suhu pemanggangan adonan puff pastry yang baik adalah …",
+                o: ["100-120 derajat Celcius", "150-160 derajat Celcius", "170-180 derajat Celcius",
+                    "200-220 derajat Celcius", "250-270 derajat Celcius"
+                ],
+                a: "200-220 derajat Celcius"
+            },
+            {
+                q: "Jenis puff pastry yang menggunakan 100% lemak roll in dari total tepung adalah …",
+                o: ["Full pastry", "Three quarter pastry", "Half pastry", "Quarter pastry", "Double pastry"],
+                a: "Full pastry"
+            },
+            {
+                q: "Ragi (yeast) yang biasanya digunakan dalam pembuatan roti dan kue dari adonan beragi lainnya adalah …",
+                o: ["Brettanomyces bruxellensis", "Zygosaccharomyces", "Saccharomyces pombe",
+                    "Saccharomyces cerevisiae", "Lactobacillus bulgaricus"
+                ],
+                a: "Saccharomyces cerevisiae"
+            },
+            {
+                q: "Ragi yang memiliki kandungan kadar air sekitar 70% adalah jenis …",
+                o: ["Dry yeast", "Active dry yeast", "Compressed yeast", "Instant yeast", "Liquid yeast"],
+                a: "Compressed yeast"
+            },
+            {
+                q: "Salah satu fungsi ragi adalah sebagai leavening agent, yaitu …",
+                o: ["Memberikan rasa", "Memberikan aroma", "Membentuk struktur jaringan gluten",
+                    "Mengubah gula menjadi gas CO2", "Mengawetkan adonan"
+                ],
+                a: "Mengubah gula menjadi gas CO2"
+            },
+            {
+                q: "Mixer yang dirancang khusus untuk adonan beragi dan adonan berat lainnya adalah …",
+                o: ["Spiral mixer", "Vertical mixer", "Horizontal mixer", "Hand mixer", "Planetary mixer"],
+                a: "Spiral mixer"
+            },
+            {
+                q: "Tepung terigu yang memiliki kadar kandungan protein gluten >12% merupakan jenis …",
+                o: ["Soft flour", "Self raising flour", "Hard flour", "Medium flour", "Cake flour"],
+                a: "Hard flour"
+            },
+            {
+                q: "Ragi yang dalam pemakaiannya harus dilarutkan terlebih dahulu dengan air hangat merupakan jenis ragi …",
+                o: ["Compressed yeast", "Active dry yeast", "Liquid yeast", "Instant yeast", "Natural yeast"],
+                a: "Active dry yeast"
+            },
+            {
+                q: "Penambahan yeast dalam adonan kue bertujuan untuk …",
+                o: ["Menahan gas CO2", "Melarutkan bahan-bahan", "Menambah nilai gizi",
+                    "Mengembangkan adonan dengan menghasilkan gas", "Memadatkan tekstur"
+                ],
+                a: "Mengembangkan adonan dengan menghasilkan gas"
+            },
+            {
+                q: "Hidangan dibawah ini yang menggunakan ragi adalah …",
+                o: ["Pancake", "Churros", "Petit four", "Donat", "Pie Susu"],
+                a: "Donat"
+            },
+            {
+                q: "Alat khusus yang digunakan untuk mengoptimalkan proses fermentasi adalah …",
+                o: ["Sheeter", "Oven", "Mixer", "Proofer", "Chiller"],
+                a: "Proofer"
+            },
+            {
+                q: "Tepung terigu yang biasa dipakai dalam pembuatan roti adalah jenis …",
+                o: ["Hard flour", "Soft flour", "Medium flour", "Self raising flour", "Low protein flour"],
+                a: "Hard flour"
+            },
+            {
+                q: "Fungsi lemak dalam pembuatan roti adalah …",
+                o: ["Mengembangkan adonan", "Mengkristalkan gluten", "Mengatur suhu adonan",
+                    "Melumasi dan melembutkan adonan", "Memberi rasa asin"
+                ],
+                a: "Melumasi dan melembutkan adonan"
+            },
+            {
+                q: "Fungsi garam dalam pembuatan adonan roti adalah ..",
+                o: ["Mengembangkan adonan", "Mestabilkan gluten", "Menambah nilai gizi", "Mengatur suhu adonan",
+                    "Mempercepat fermentasi"
+                ],
+                a: "Mestabilkan gluten"
+            },
+            {
+                q: "Bahan yang ditambahkan dalam pembuatan roti yang membantu ragi dalam proses pengembangan dan memperkokoh struktur roti adalah …",
+                o: ["Lemak", "Susu bubuk", "Bread improver", "Garam", "Gula halus"],
+                a: "Bread improver"
+            },
+            {
+                q: "Pada pembuatan roti, air yang digunakan untuk mengontrol suhu adonan adalah …",
+                o: ["Air biasa", "Air garam", "Amonium karbonat", "Air es", "Air panas"],
+                a: "Air es"
+            },
+            {
+                q: "Tujuan dari proses fermentasi adalah untuk …",
+                o: ["Menghasilkan roti dengan volume yang besar dan lembut", "Kehilangan sifat-sifat khas",
+                    "Produk mengalami penurunan mutu", "Pematangan adonan", "Mengeraskan kulit roti"
+                ],
+                a: "Menghasilkan roti dengan volume yang besar dan lembut"
+            },
+            {
+                q: "Alat yang berfungsi membagi dan memotong adonan mejadi sama rata adalah …",
+                o: ["Sheeter", "Mixer", "Divider", "Moulder", "Rounder"],
+                a: "Divider"
+            },
+            {
+                q: "Suhu dan kelembapan yang tepat saat proses fermentasi akhir didalam lemari proofer adalah …",
+                o: ["50% dan 24-25 derajat Celcius", "65% dan 24-25 derajat Celcius",
+                    "85% dan 40-50 derajat Celcius", "85% dan 35-40 derajat Celcius",
+                    "90% dan 60 derajat Celcius"
+                ],
+                a: "85% dan 35-40 derajat Celcius"
+            },
+            {
+                q: "Alat yang digunakan untuk memotong roti tawar dengan ketebalan yang sama rata adalah …",
+                o: ["Divider", "Proofer", "Sheeter", "Bread slicer", "Scraper"],
+                a: "Bread slicer"
+            },
+            {
+                q: "Metode pembutan roti secara langsung yang paling banyak digunakan dalam produksi skala rumah tangga di Indonesia adalah …",
+                o: ["Straight dough", "Sponge and dough", "Metode biang", "No time dough", "Sourdough"],
+                a: "Straight dough"
+            },
+            {
+                q: "Jenis roti tawar yang berbentuk simetris persegi panjang (tertutup) adalah …",
+                o: ["Rye bread", "Baguette", "Soft roll", "Casino bread", "Sour bread"],
+                a: "Casino bread"
+            },
+            {
+                q: "Suhu yang tepat untuk pembakaran roti tawar adalah …",
+                o: ["140-150 derajat Celcius", "150-160 derajat Celcius", "160-170 derajat Celcius",
+                    "170-190 derajat Celcius", "220-250 derajat Celcius"
+                ],
+                a: "170-190 derajat Celcius"
+            },
+            {
+                q: "Suhu yang tepat untuk pembakaran roti manis adalah …",
+                o: ["140-150 derajat Celcius", "150-160 derajat Celcius", "160-170 derajat Celcius",
+                    "170-180 derajat Celcius", "200-220 derajat Celcius"
+                ],
+                a: "160-170 derajat Celcius"
+            },
+            {
+                q: "Pada proses pembuatan danish dan croissant proses pengembangan terjadi karena proses aerasi oleh …",
+                o: ["Baking powder", "Lemak roll in dan yeast", "Yeast saja", "Lemak roll in saja", "Telur"],
+                a: "Lemak roll in dan yeast"
+            },
+            {
+                q: "Karakteristik danish dan croissant yang baik adalah sebagai berikut, kecuali…",
+                o: ["Setiap lapisan harus teraerasi", "Crumb jelas/tegas", "Lapisan tidak terpisah",
+                    "Tekstur keras", "Bentuk simetris"
+                ],
+                a: "Tekstur keras"
+            },
+            {
+                q: "Merupakan lemak yang 100% diperkeras untuk menghasilkan adonan yang dapat dilipat pada danish dan croissant yaitu …",
+                o: ["Butter", "Korsvet", "Margarin", "Shortening", "Cream Cheese"],
+                a: "Korsvet"
+            },
+            {
+                q: "Kualitas aerasi pada lapisan adonan bergantung pada faktor berikut, kecuali …",
+                o: ["Jenis topping", "Suhu adonan dasar", "Kualitas lemak roll in", "Rasio kandungan lemak",
+                    "Teknik pelipatan"
+                ],
+                a: "Jenis topping"
+            },
+            {
+                q: "Pada pembuatan danish dan croissant jumlah pelipatan adoanan yang optimum adalah …",
+                o: ["4 single", "2 single", "5 single", "3 single", "1 double"],
+                a: "3 single"
+            },
+            {
+                q: "Bahan yang digunakan untuk mengoles permukaan roti agar mengkilap coklat keemasan disebut …",
+                o: ["Butter cream", "Simple syrup", "Egg wash", "Cooking oil", "Whipped cream"],
+                a: "Egg wash"
+            }
+        ];
+
+        // --- VARIABEL GLOBAL ---
+        let quizData = [];
+        let currentQuestionIndex = 0;
+        let userAnswers = []; // Array menyimpan index jawaban user (0-4)
+
+        // --- FUNGSI LOGIKA ---
+
+        // 1. Acak Array (Fisher-Yates Shuffle)
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        // 2. Persiapan Data (Randomize Soal & Opsi)
+        function prepareQuiz() {
+            // Copy data raw
+            let questions = JSON.parse(JSON.stringify(rawQuestions));
+
+            // Acak urutan soal
+            questions = shuffleArray(questions);
+
+            // Proses setiap soal: Acak opsi jawaban
+            quizData = questions.map(q => {
+                const correctAnswerText = q.a;
+                // Acak urutan 5 opsi
+                const shuffledOptions = shuffleArray([...q.o]);
+                // Cari dimana jawaban benar berada sekarang
+                const correctIndex = shuffledOptions.indexOf(correctAnswerText);
+
+                return {
+                    question: q.q,
+                    options: shuffledOptions,
+                    correctIndex: correctIndex
+                };
+            });
+
+            // Reset state
+            userAnswers = new Array(quizData.length).fill(null);
+            currentQuestionIndex = 0;
+        }
+
+        // 3. Render Tampilan Soal
+        function renderQuestion() {
+            const q = quizData[currentQuestionIndex];
+
+            // Update Nomor & Teks
+            document.getElementById('question-counter').innerText =
+                `Soal ${currentQuestionIndex + 1}/${quizData.length}`;
+            document.getElementById('question-text').innerText = q.question;
+
+            // Update Opsi (A, B, C, D, E)
+            const optionsContainer = document.getElementById('options-container');
+            optionsContainer.innerHTML = '';
+
+            const labels = ['A', 'B', 'C', 'D', 'E'];
+
+            q.options.forEach((opt, index) => {
+                const btn = document.createElement('div');
+                btn.className = 'option-btn';
+
+                // Cek jika ini jawaban yg sudah dipilih user
+                if (userAnswers[currentQuestionIndex] === index) {
+                    btn.classList.add('selected');
+                }
+
+                // HTML isi tombol
+                btn.innerHTML = `<span class="opt-label">${labels[index]}.</span> ${opt}`;
+
+                // Event Klik
+                btn.onclick = () => selectOption(index);
+                optionsContainer.appendChild(btn);
+            });
+
+            // Update Tombol Navigasi
+            document.getElementById('btn-prev').disabled = (currentQuestionIndex === 0);
+
+            const btnNext = document.getElementById('btn-next');
+            const btnFinish = document.getElementById('btn-finish');
+
+            // Logic Tombol Next/Finish
+            if (currentQuestionIndex === quizData.length - 1) {
+                btnNext.style.display = 'none';
+                btnFinish.style.display = 'inline-block';
+                // Cek kelengkapan
+                const allAnswered = userAnswers.every(ans => ans !== null);
+                btnFinish.disabled = !allAnswered;
+                btnFinish.innerText = allAnswered ? "Selesai & Nilai" : "Belum Lengkap";
+            } else {
+                btnNext.style.display = 'inline-block';
+                btnFinish.style.display = 'none';
+            }
+
+            // Update Progress Bar
+            const answeredCount = userAnswers.filter(a => a !== null).length;
+            const percentage = (answeredCount / quizData.length) * 100;
+            document.getElementById('progress-bar').style.width = percentage + '%';
+
+            // Update Grid Navigator (jika sedang terbuka)
+            updateNavigatorGrid();
+        }
+
+        // 4. User Memilih Jawaban
+        function selectOption(index) {
+            userAnswers[currentQuestionIndex] = index;
+            renderQuestion(); // Re-render untuk update tampilan seleksi & tombol selesai
+        }
+
+        // 5. Pindah Soal (Next/Prev)
+        function changeQuestion(step) {
+            currentQuestionIndex += step;
+            renderQuestion();
+        }
+
+        // 6. Lompat ke Soal Tertentu
+        function jumpToQuestion(index) {
+            currentQuestionIndex = index;
+            renderQuestion();
+            toggleNavigator(); // Tutup popup
+        }
+
+        // 7. Grid Navigator
+        function updateNavigatorGrid() {
+            const grid = document.getElementById('nav-grid');
+            grid.innerHTML = '';
+
+            quizData.forEach((_, idx) => {
+                const div = document.createElement('div');
+                div.className = 'nav-item';
+                div.innerText = idx + 1;
+
+                // Warna jika sudah dijawab
+                if (userAnswers[idx] !== null) div.classList.add('answered');
+                // Border jika soal sedang aktif
+                if (currentQuestionIndex === idx) div.classList.add('current');
+
+                div.onclick = () => jumpToQuestion(idx);
+                grid.appendChild(div);
+            });
+        }
+
+        function toggleNavigator() {
+            const nav = document.getElementById('navigator-overlay');
+            if (nav.style.display === 'flex') {
+                nav.style.display = 'none';
+            } else {
+                updateNavigatorGrid(); // Pastikan grid terupdate sebelum muncul
+                nav.style.display = 'flex';
+            }
+        }
+
+        // 8. Hitung Skor Akhir
+        function finishQuiz() {
+            let score = 0;
+            quizData.forEach((q, idx) => {
+                // Bandingkan index jawaban user dengan index kunci jawaban (yg sudah diacak)
+                if (userAnswers[idx] === q.correctIndex) {
+                    score++;
+                }
+            });
+
+            // Skala 100
+            const finalScore = Math.round((score / quizData.length) * 100);
+
+            // Tampilkan Layar Hasil
+            document.getElementById('quiz-screen').classList.remove('active');
+            document.getElementById('result-screen').classList.add('active');
+
+            // Isi Data
+            const scoreEl = document.getElementById('final-score');
+            scoreEl.innerText = finalScore;
+
+            const motivasiEl = document.getElementById('motivasi-text');
+            if (finalScore >= 75) {
+                scoreEl.style.borderColor = "#4CAF50"; // Hijau
+                motivasiEl.innerHTML =
+                    "<strong>Selamat!</strong><br>Kompetensi Anda sangat baik. Tetap semangat belajar dan pertahankan prestasi ini!";
+                motivasiEl.style.color = "#4CAF50";
+            } else {
+                scoreEl.style.borderColor = "#FF5252"; // Merah
+                motivasiEl.innerHTML =
+                    "<strong>Jangan Menyerah!</strong><br>Silakan pelajari kembali materi.";
+                motivasiEl.style.color = "#FF8A80"; // Merah muda terang agar terbaca di background gelap
+            }
+        }
+
+        // 9. Sistem Popup
+        function showPopup(type) {
+            const popup = document.getElementById('popup-confirm');
+            const title = document.getElementById('popup-title');
+            const msg = document.getElementById('popup-message');
+            const btnConfirm = document.getElementById('btn-confirm-action');
+
+            popup.style.display = 'flex';
+
+            if (type === 'start') {
+                title.innerText = "Siap Mulai Mengerjakan Kuis?";
+                msg.innerText = "Soal akan diacak. Pastikan koneksi internet lancar.";
+                btnConfirm.innerText = "Mulai Kuis";
+                btnConfirm.onclick = () => {
+                    prepareQuiz();
+                    document.getElementById('welcome-screen').classList.remove('active');
+                    document.getElementById('quiz-screen').classList.add('active');
+                    renderQuestion();
+                    closePopup();
+                };
+            } else if (type === 'finish') {
+                title.innerText = "Kumpulkan Jawaban?";
+                msg.innerText = "Anda tidak bisa mengubah jawaban setelah nilai keluar. Teliti kembali jawaban Anda?";
+                btnConfirm.innerText = "Ya, Lihat Nilai";
+                btnConfirm.onclick = () => {
+                    closePopup();
+                    finishQuiz();
+                };
+            }
+        }
+
+        function closePopup() {
+            document.getElementById('popup-confirm').style.display = 'none';
+        }
+    </script>
 </body>
+
 </html>
